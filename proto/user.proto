@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package user;
+
+import "common.proto";
+
+// User Service
+service UserService {
+  // Get user by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  
+  // Create user
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  
+  // Update user
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  
+  // Delete user
+  rpc DeleteUser(DeleteUserRequest) returns (common.Empty);
+  
+  // List users
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  
+  // Change password
+  rpc ChangePassword(ChangePasswordRequest) returns (common.Empty);
+}
+
+// User message
+message User {
+  common.UUID id = 1;
+  string email = 2;
+  string full_name = 3;
+  bool is_active = 4;
+  bool is_superuser = 5;
+  common.Timestamp created_at = 6;
+  common.Timestamp updated_at = 7;
+}
+
+// Get User Request
+message GetUserRequest {
+  common.UUID user_id = 1;
+}
+
+// Get User Response
+message GetUserResponse {
+  User user = 1;
+}
+
+// Create User Request
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+  string full_name = 3;
+}
+
+// Create User Response
+message CreateUserResponse {
+  User user = 1;
+}
+
+// Update User Request
+message UpdateUserRequest {
+  common.UUID user_id = 1;
+  optional string email = 2;
+  optional string full_name = 3;
+  optional bool is_active = 4;
+}
+
+// Update User Response
+message UpdateUserResponse {
+  User user = 1;
+}
+
+// Delete User Request
+message DeleteUserRequest {
+  common.UUID user_id = 1;
+}
+
+// List Users Request
+message ListUsersRequest {
+  common.PaginationRequest pagination = 1;
+}
+
+// List Users Response
+message ListUsersResponse {
+  repeated User users = 1;
+  common.PaginationResponse pagination = 2;
+}
+
+// Change Password Request
+message ChangePasswordRequest {
+  common.UUID user_id = 1;
+  string old_password = 2;
+  string new_password = 3;
+}

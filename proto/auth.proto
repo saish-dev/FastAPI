@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package auth;
+
+import "common.proto";
+
+// Auth Service
+service AuthService {
+  // Validate JWT token
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  
+  // Validate API key
+  rpc ValidateApiKey(ValidateApiKeyRequest) returns (ValidateApiKeyResponse);
+  
+  // Login with credentials
+  rpc Login(LoginRequest) returns (LoginResponse);
+  
+  // Refresh access token
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  
+  // Create API key
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse);
+  
+  // Revoke API key
+  rpc RevokeApiKey(RevokeApiKeyRequest) returns (common.Empty);
+}
+
+// Validate Token Request
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+// Validate Token Response
+message ValidateTokenResponse {
+  bool valid = 1;
+  common.UUID user_id = 2;
+  string email = 3;
+  repeated string roles = 4;
+}
+
+// Validate API Key Request
+message ValidateApiKeyRequest {
+  string api_key = 1;
+}
+
+// Validate API Key Response
+message ValidateApiKeyResponse {
+  bool valid = 1;
+  string service_name = 2;
+  repeated string permissions = 3;
+}
+
+// Login Request
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// Login Response
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+  common.UUID user_id = 4;
+}
+
+// Refresh Token Request
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+// Refresh Token Response
+message RefreshTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  int64 expires_in = 3;
+}
+
+// Create API Key Request
+message CreateApiKeyRequest {
+  string service_name = 1;
+  repeated string permissions = 2;
+  int64 expires_in_days = 3;
+}
+
+// Create API Key Response
+message CreateApiKeyResponse {
+  string api_key = 1;
+  common.UUID key_id = 2;
+  common.Timestamp created_at = 3;
+  common.Timestamp expires_at = 4;
+}
+
+// Revoke API Key Request
+message RevokeApiKeyRequest {
+  common.UUID key_id = 1;
+}

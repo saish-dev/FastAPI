@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package common;
+
+// Common UUID message
+message UUID {
+  string value = 1;
+}
+
+// Common timestamp
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+// Pagination request
+message PaginationRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+// Pagination response
+message PaginationResponse {
+  int32 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}
+
+// Standard response status
+message Status {
+  int32 code = 1;
+  string message = 2;
+}
+
+// Empty message for void responses
+message Empty {}

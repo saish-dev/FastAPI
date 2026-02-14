@@ -1,0 +1,122 @@
+version: '3.8'
+
+services:
+  # PostgreSQL for auth-service
+  auth-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for user-service
+  user-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: user_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NATS message broker
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"  # HTTP monitoring
+    command: "-js -m 8222"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+      - "50051:50051"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@auth-db:5432/auth_db
+      - NATS_URL=nats://nats:4222
+      - SECRET_KEY=your-secret-key-change-in-production-use-openssl-rand-hex-32
+      - DEBUG=true
+      - LOG_FORMAT=colored
+    depends_on:
+      auth-db:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    volumes:
+      - ./auth-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+  # User Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+      - "50052:50052"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@user-db:5432/user_db
+      - NATS_URL=nats://nats:4222
+      - AUTH_SERVICE_GRPC_URL=auth-service:50051
+      - SECRET_KEY=your-secret-key-change-in-production-use-openssl-rand-hex-32
+      - DEBUG=true
+      - LOG_FORMAT=colored
+    depends_on:
+      user-db:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    volumes:
+      - ./user-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+
+  # Gateway Service
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - AUTH_SERVICE_GRPC_URL=auth-service:50051
+      - USER_SERVICE_GRPC_URL=user-service:50052
+      - SECRET_KEY=your-secret-key-change-in-production-use-openssl-rand-hex-32
+      - DEBUG=true
+      - LOG_FORMAT=colored
+    depends_on:
+      - auth-service
+      - user-service
+    volumes:
+      - ./gateway-service:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  auth_db_data:
+  user_db_data:
