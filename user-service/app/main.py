@@ -1,5 +1,5 @@
 """
-Main FastAPI application for auth-service.
+Main FastAPI application for user-service.
 """
 
 from contextlib import asynccontextmanager
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Authentication and authorization microservice",
+    description="User profile management microservice",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -63,9 +63,9 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 # Include routers
-from app.routers import auth_router
+from app.routers import users_router
 
-app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(users_router, prefix="/users", tags=["Users"])
 
 
 # Health check endpoint

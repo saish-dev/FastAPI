@@ -1,5 +1,5 @@
 """
-Main FastAPI application for auth-service.
+Main FastAPI application for gateway service.
 """
 
 from contextlib import asynccontextmanager
@@ -17,8 +17,9 @@ from app.core.exceptions import (
 )
 from app.core.logging import setup_logging
 from app.core.middleware import CorrelationIdMiddleware
-from app.db.session import close_db
-from app.events.publisher import event_publisher
+from app.grpc.auth_client import auth_client
+from app.grpc.user_client import user_client
+from app.middleware.auth import AuthenticationMiddleware
 
 
 @asynccontextmanager
@@ -26,20 +27,21 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager."""
     # Startup
     setup_logging()
-    await event_publisher.connect()
+    await auth_client.connect()
+    await user_client.connect()
 
     yield
 
     # Shutdown
-    await event_publisher.disconnect()
-    await close_db()
+    await auth_client.close()
+    await user_client.close()
 
 
 # Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Authentication and authorization microservice",
+    description="API Gateway for microservices",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -56,6 +58,9 @@ app.add_middleware(
 
 # Add custom middleware
 app.add_middleware(CorrelationIdMiddleware)
+# Note: Authentication middleware is commented out for initial testing
+# Uncomment after gRPC proto files are generated
+# app.add_middleware(AuthenticationMiddleware)
 
 # Add exception handlers
 app.add_exception_handler(AppException, app_exception_handler)
@@ -63,24 +68,25 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 # Include routers
-from app.routers import auth_router
+from app.routers import router as api_router
 
-app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
+app.include_router(api_router)
 
 
 # Health check endpoint
 @app.get("/health", tags=["health"])
 async def health_check() -> dict:
-    """Health check endpoint."""
+    """
+    Aggregated health check.
+
+    In full implementation, this would check health of all backend services.
+    """
     return {
         "status": "healthy",
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
+        "services": {
+            "auth": "connected" if auth_client.stub else "not_connected",
+            "user": "connected" if user_client.stub else "not_connected",
+        },
     }
-
-
-# Metrics endpoint (placeholder)
-@app.get("/metrics", tags=["metrics"])
-async def metrics() -> dict:
-    """Prometheus metrics endpoint."""
-    return {"message": "Metrics endpoint - integrate Prometheus client"}
