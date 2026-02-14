@@ -3,6 +3,7 @@ Dependency injection for FastAPI.
 """
 
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, Header
 from jose import JWTError
@@ -71,7 +72,7 @@ async def get_current_user(
         if payload.get("type") != "access":
             raise AuthenticationError("Invalid token type")
 
-        user_id = int(payload.get("sub"))
+        user_id = UUID(payload.get("sub"))
 
         # Get user from database
         user = await user_repository.get_by_id(user_id)

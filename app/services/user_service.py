@@ -2,6 +2,8 @@
 User service - contains business logic for user operations.
 """
 
+from uuid import UUID
+
 from app.core.exceptions import ConflictError, NotFoundError
 from app.core.security import get_password_hash
 from app.models.user import User
@@ -50,7 +52,7 @@ class UserService:
 
         return UserResponse.model_validate(created_user)
 
-    async def get_user(self, user_id: int) -> UserResponse:
+    async def get_user(self, user_id: UUID) -> UserResponse:
         """
         Get user by ID.
 
@@ -86,7 +88,7 @@ class UserService:
         return [UserResponse.model_validate(user) for user in users]
 
     async def update_user(
-        self, user_id: int, user_data: UserUpdate
+        self, user_id: UUID, user_data: UserUpdate
     ) -> UserResponse:
         """
         Update user.
@@ -133,7 +135,7 @@ class UserService:
 
         return UserResponse.model_validate(updated_user)
 
-    async def delete_user(self, user_id: int) -> None:
+    async def delete_user(self, user_id: UUID) -> None:
         """
         Delete user.
 

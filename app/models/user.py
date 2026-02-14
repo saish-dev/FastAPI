@@ -3,9 +3,11 @@ User model.
 """
 
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
+from uuid_extensions import uuid7
 
 from app.db.base import Base
 
@@ -15,7 +17,9 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, default=uuid7, index=True
+    )
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )

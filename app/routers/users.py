@@ -2,6 +2,8 @@
 Users router - handles HTTP requests for user operations.
 """
 
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, status
 
 from app.dependencies import get_current_user, get_user_service
@@ -50,7 +52,7 @@ async def get_current_user_info(
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
-    user_id: int,
+    user_id: UUID,
     user_service: UserService = Depends(get_user_service),
     _: User = Depends(get_current_user),  # Require authentication
 ) -> UserResponse:
@@ -90,7 +92,7 @@ async def get_users(
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user(
-    user_id: int,
+    user_id: UUID,
     user_data: UserUpdate,
     user_service: UserService = Depends(get_user_service),
     _: User = Depends(get_current_user),  # Require authentication
@@ -111,7 +113,7 @@ async def update_user(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
-    user_id: int,
+    user_id: UUID,
     user_service: UserService = Depends(get_user_service),
     _: User = Depends(get_current_user),  # Require authentication
 ) -> None:
